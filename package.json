@@ -1,0 +1,41 @@
+{
+  "name": "verilock-offline",
+  "private": true,
+  "version": "0.1.2",
+  "type": "module",
+  "description": "Open-source offline verifier for VeriLock document seals — hash locally, prove against Nimiq, never upload the file.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clevertech-os/verilock-offline.git"
+  },
+  "homepage": "https://clevertech-os.github.io/verilock-offline/",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "audit": "node scripts/audit-no-upload.mjs",
+    "check": "npm run audit && npm test && npm run build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~5.8.3",
+    "vite": "^8.1.1",
+    "vitest": "^3.2.7"
+  }
+}
