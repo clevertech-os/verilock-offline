@@ -2,16 +2,21 @@
 
 **Open-source companion to [verilock.online](https://verilock.online)** — hash documents on your device and verify Nimiq seal proofs **without uploading the file**.
 
-| Surface | Platforms |
-|---------|-----------|
-| **Web SPA** | [clevertech-os.github.io/verilock-offline](https://clevertech-os.github.io/verilock-offline/) — any modern browser |
-| **Desktop app** | macOS, Windows, Linux installers on [Releases](https://github.com/clevertech-os/verilock-offline/releases) (Tauri 2) |
+## Download
 
-- **Live web:** https://clevertech-os.github.io/verilock-offline/  
-- **Source:** this repository  
-- **Latest release:** https://github.com/clevertech-os/verilock-offline/releases/latest  
-- **Product (create / invite / seal):** [verilock.online](https://verilock.online)  
-- **License:** MIT  
+**Latest release: [v0.1.2](https://github.com/clevertech-os/verilock-offline/releases/latest)** · [all releases](https://github.com/clevertech-os/verilock-offline/releases) · [SHA-256 checksums](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/SHA256SUMS.txt)
+
+| Platform | Installer |
+|----------|-----------|
+| **macOS (Apple Silicon)** | [`.dmg` — M1 / M2 / M3 / M4](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_aarch64.dmg) |
+| **macOS (Intel)** | [`.dmg` — x64](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_x64.dmg) |
+| **Windows** | [`.msi`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_x64_en-US.msi) · [`.exe` setup](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_x64-setup.exe) |
+| **Linux** | [`.AppImage`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_amd64.AppImage) · [`.deb`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_amd64.deb) · [`.rpm`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline-0.1.2-1.x86_64.rpm) |
+| **Web (no install)** | [clevertech-os.github.io/verilock-offline](https://clevertech-os.github.io/verilock-offline/) |
+
+Builds are unsigned open-source binaries. macOS Gatekeeper / Windows SmartScreen may warn on first open — verify checksums above, then open anyway (macOS: right‑click → Open), or [build from source](#desktop-tauri).
+
+**Product (create / invite / seal):** [verilock.online](https://verilock.online) · **License:** MIT
 
 ---
 
@@ -43,7 +48,9 @@ Requirements: **Node.js 20+**.
 
 ## Desktop (Tauri)
 
-Builds native installers for **macOS**, **Windows**, and **Linux** from the same UI.
+Prefer a [prebuilt installer](#download)? Use the table at the top.
+
+To build installers yourself (same UI as the web SPA):
 
 ```bash
 # Install Rust: https://rustup.rs
@@ -52,15 +59,7 @@ npm run tauri:dev     # desktop window + hot reload
 npm run tauri:build   # platform installers under src-tauri/target/release/bundle/
 ```
 
-GitHub Actions (on version tags) builds all three OS targets and attaches artifacts to the Release, plus SHA-256 checksums.
-
-| OS | Typical artifacts |
-|----|-------------------|
-| macOS | `.dmg` |
-| Windows | `.msi` / `.exe` |
-| Linux | `.AppImage`, `.deb` |
-
-Unsigned OSS builds may trigger Gatekeeper / SmartScreen warnings — verify checksums from the Release page, or build from source.
+GitHub Actions (on version tags `v*`) builds macOS / Windows / Linux and attaches artifacts + `SHA256SUMS.txt` to the Release.
 
 ---
 
