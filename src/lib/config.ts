@@ -1,5 +1,5 @@
 /** App version shown in UI and fingerprint receipts. */
-export const APP_VERSION = '0.1.2'
+export const APP_VERSION = '0.1.3'
 
 export const APP_NAME = 'VeriLock Offline'
 
@@ -11,6 +11,15 @@ export const ONLINE_PRODUCT_URL = 'https://verilock.online'
 export const DEFAULT_NIMIQ_RPC_URL =
   (import.meta.env.VITE_NIMIQ_RPC_URL as string | undefined)?.trim() ||
   'https://rpc.nimiqwatch.com'
+
+/**
+ * VeriLock seal fee / credit proof sink on mainnet.
+ * Lock transactions send 1 luna here with the 37-byte attestation payload.
+ * Offline match search scans this address via public RPC (no product API).
+ */
+export const DEFAULT_ATTESTATION_SINK =
+  (import.meta.env.VITE_ATTESTATION_SINK as string | undefined)?.trim() ||
+  'NQ815N9JRGBJMLJQNBKEMQ1RD27TXS8PCVKA'
 
 /** verilock.online origin for optional hash-only directory lookup. */
 export const DEFAULT_ONLINE_API_BASE =

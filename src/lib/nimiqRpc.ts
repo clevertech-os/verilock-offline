@@ -237,3 +237,156 @@ export async function verifyFileAgainstTx(options: {
     format: parsed.format,
   }
 }
+
+/** Normalize Nimiq address for RPC (strip spaces, uppercase NQ prefix + body). */
+export function normalizeNimiqAddress(address: string): string {
+  return address.replace(/\s+/g, '').toUpperCase()
+}
+
+/**
+ * List transactions involving an address (newest first).
+ * Nimiq RPC: getTransactionsByAddress(address, max, startAt)
+ * `startAt` is an exclusive cursor (last hash from previous page), or null.
+ */
+export async function fetchTransactionsByAddress(
+  rpcUrl: string,
+  address: string,
+  max = 50,
+  startAt: string | null = null,
+  fetchImpl: typeof fetch = fetch,
+): Promise<NimiqTransaction[]> {
+  const addr = normalizeNimiqAddress(address)
+  if (!/^NQ[A-Z0-9]{34}$/.test(addr)) {
+    throw new Error('Invalid Nimiq address for transaction scan')
+  }
+  const limit = Math.min(Math.max(1, Math.floor(max)), 500)
+  const start =
+    startAt == null || startAt === ''
+      ? null
+      : normalizeTxHash(startAt)
+  if (start != null && !/^[a-f0-9]{64}$/.test(start)) {
+    throw new Error('startAt must be a 64-character hex transaction hash')
+  }
+
+  const raw = await rpcCall<unknown>(
+    rpcUrl,
+    'getTransactionsByAddress',
+    [addr, limit, start],
+    fetchImpl,
+  )
+  const list = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown }).data)
+      ? (raw as { data: unknown[] }).data
+      : []
+  return list
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(mapTx)
+}
+
+export type SealChainMatch = {
+  tx: NimiqTransaction
+  localSha256: string
+  chainSha256: string
+  shortId: string
+  format: string
+}
+
+export type FindSealMatchesResult =
+  | {
+      status: 'ok'
+      localSha256: string
+      matches: SealChainMatch[]
+      scannedTxs: number
+      sealTxs: number
+      truncated: boolean
+      sinkAddress: string
+    }
+  | { status: 'error'; localSha256: string; message: string }
+
+/**
+ * Scan VeriLock seal sink transactions on Nimiq for payloads embedding `localSha256`.
+ * Sends only RPC queries (address + pagination) — never file bytes or the hash as a query body.
+ * Matching is client-side by parsing each tx's recipientData.
+ */
+export async function findSealMatchesByHash(options: {
+  rpcUrl: string
+  localSha256: string
+  sinkAddress: string
+  /** Hard cap on how many address transactions to page through. Default 500. */
+  maxTxs?: number
+  pageSize?: number
+  fetchImpl?: typeof fetch
+}): Promise<FindSealMatchesResult> {
+  const local = options.localSha256.toLowerCase()
+  if (!/^[a-f0-9]{64}$/.test(local)) {
+    return { status: 'error', localSha256: local, message: 'SHA-256 must be 64 hex characters' }
+  }
+
+  const maxTxs = options.maxTxs ?? 500
+  const pageSize = options.pageSize ?? 100
+  const fetchImpl = options.fetchImpl ?? fetch
+  const sink = normalizeNimiqAddress(options.sinkAddress)
+  const matches: SealChainMatch[] = []
+  let scannedTxs = 0
+  let sealTxs = 0
+  let startAt: string | null = null
+  let truncated = false
+
+  try {
+    while (scannedTxs < maxTxs) {
+      const batch = Math.min(pageSize, maxTxs - scannedTxs)
+      const txs = await fetchTransactionsByAddress(
+        options.rpcUrl,
+        sink,
+        batch,
+        startAt,
+        fetchImpl,
+      )
+      if (txs.length === 0) break
+
+      for (const tx of txs) {
+        scannedTxs += 1
+        const parsed = parseAttestationPayload(tx.recipientData)
+        if (!parsed) continue
+        sealTxs += 1
+        if (parsed.sha256 === local) {
+          matches.push({
+            tx,
+            localSha256: local,
+            chainSha256: parsed.sha256,
+            shortId: parsed.shortId,
+            format: parsed.format,
+          })
+        }
+      }
+
+      // Fewer results than requested ⇒ end of history.
+      if (txs.length < batch) break
+      // Hit the client-side scan budget with a full page still available.
+      if (scannedTxs >= maxTxs) {
+        truncated = true
+        break
+      }
+      const last = txs[txs.length - 1]
+      if (!last?.hash) break
+      startAt = normalizeTxHash(last.hash)
+    }
+  } catch (err) {
+    return {
+      status: 'error',
+      localSha256: local,
+      message: err instanceof Error ? err.message : String(err),
+    }
+  }
+
+  return {
+    status: 'ok',
+    localSha256: local,
+    matches,
+    scannedTxs,
+    sealTxs,
+    truncated,
+    sinkAddress: sink,
+  }
+}

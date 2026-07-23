@@ -17,7 +17,7 @@ import './App.css'
 type TabId = 'fingerprint' | 'tx' | 'certificate' | 'directory' | 'trust'
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'fingerprint', label: 'Fingerprint' },
+  { id: 'fingerprint', label: 'Check file' },
   { id: 'tx', label: 'Verify (tx)' },
   { id: 'certificate', label: 'Certificate' },
   { id: 'directory', label: 'Directory' },
@@ -72,9 +72,9 @@ export default function App() {
           <section className="hero">
             <h1>Check a sealed document without uploading it</h1>
             <p>
-              Hash files on your Mac, Windows, or Linux machine. Prove they match a Nimiq lock
-              transaction or a VeriLock certificate. Review the code to confirm the file never
-              leaves this app.
+              Drop a file to hash it on this device, then scan public Nimiq seal transactions for
+              matches — or prove against a known lock tx / certificate. Review the code to confirm
+              the file never leaves this app.
             </p>
           </section>
 

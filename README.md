@@ -4,14 +4,14 @@
 
 ## Download
 
-**Latest release: [v0.1.2](https://github.com/clevertech-os/verilock-offline/releases/latest)** · [all releases](https://github.com/clevertech-os/verilock-offline/releases) · [SHA-256 checksums](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/SHA256SUMS.txt)
+**Latest release: [v0.1.3](https://github.com/clevertech-os/verilock-offline/releases/latest)** · [all releases](https://github.com/clevertech-os/verilock-offline/releases) · [SHA-256 checksums](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/SHA256SUMS.txt)
 
 | Platform | Installer |
 |----------|-----------|
-| **macOS (Apple Silicon)** | [`.dmg` — aarch64](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_aarch64.dmg) |
-| **macOS (Intel)** | [`.dmg` — x64](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_x64.dmg) |
-| **Windows** | [`.msi`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_x64_en-US.msi) · [`.exe` setup](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_x64-setup.exe) |
-| **Linux** | [`.AppImage`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_amd64.AppImage) · [`.deb`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline_0.1.2_amd64.deb) · [`.rpm`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.2/VeriLock.Offline-0.1.2-1.x86_64.rpm) |
+| **macOS (Apple Silicon)** | [`.dmg` — aarch64](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline_0.1.3_aarch64.dmg) |
+| **macOS (Intel)** | [`.dmg` — x64](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline_0.1.3_x64.dmg) |
+| **Windows** | [`.msi`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline_0.1.3_x64_en-US.msi) · [`.exe` setup](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline_0.1.3_x64-setup.exe) |
+| **Linux** | [`.AppImage`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline_0.1.3_amd64.AppImage) · [`.deb`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline_0.1.3_amd64.deb) · [`.rpm`](https://github.com/clevertech-os/verilock-offline/releases/download/v0.1.3/VeriLock.Offline-0.1.3-1.x86_64.rpm) |
 | **Web (no install)** | [clevertech-os.github.io/verilock-offline](https://clevertech-os.github.io/verilock-offline/) |
 
 Builds are unsigned open-source binaries. macOS Gatekeeper / Windows SmartScreen may warn on first open — verify checksums above, then open anyway (macOS: right‑click → Open), or [build from source](#desktop-tauri).
@@ -22,8 +22,8 @@ Builds are unsigned open-source binaries. macOS Gatekeeper / Windows SmartScreen
 
 ## What it does
 
-1. **Fingerprint** — SHA-256 of any local file (Web Crypto). No network.
-2. **Verify by transaction** — compare that hash to the seal payload in a Nimiq lock tx (public RPC only).
+1. **Check file (primary)** — drop any local file → SHA-256 on device → scan public Nimiq seal-sink transactions for matching seal payloads (RPC only; no product API).
+2. **Verify by transaction** — if you already have a lock tx hash, compare the local hash to that one transaction.
 3. **Verify by certificate** — compare to a VeriLock certificate JSON (fully offline for hash match; optional chain re-check).
 4. **Directory lookup (optional)** — send **only** the SHA-256 to verilock.online to list known agreements. Opt-in; not required for integrity proofs.
 
@@ -71,17 +71,19 @@ GitHub Actions (on version tags `v*`) builds macOS / Windows / Linux and attache
 |-------|----------------|
 | File never uploaded | Search `src/` for `fetch`, `FormData`, `XMLHttpRequest`. Hash path uses only `crypto.subtle.digest` on local buffers. |
 | Directory mode is opt-in | `OnlineLookupPanel` requires a consent checkbox; body is `{ sha256 }` only. |
-| Chain verify is independent of .online | `nimiqRpc.ts` talks only to the configured Nimiq RPC URL. |
+| Chain match is independent of .online | `findSealMatchesByHash` in `nimiqRpc.ts` uses only the configured Nimiq RPC URL + known seal sink address. Matching is client-side on `recipientData`. |
+| Chain verify is independent of .online | `verifyFileAgainstTx` talks only to the configured Nimiq RPC URL. |
 
 ### Network allowlist
 
 | Purpose | Default host |
 |---------|----------------|
-| Chain verify | `https://rpc.nimiqwatch.com` (configurable in Trust) |
+| Chain scan / verify | `https://rpc.nimiqwatch.com` (configurable in Trust) |
+| Seal sink (scan target) | `NQ815N9JRGBJMLJQNBKEMQ1RD27TXS8PCVKA` (build-time `VITE_ATTESTATION_SINK`) |
 | Optional directory | `https://verilock.online` |
 | Explorer links | `https://nimiq.watch` (opened by user) |
 
-Fingerprint + certificate hash compare need **zero** network.
+Local hash + certificate hash compare need **zero** network. Chain match needs RPC only.
 
 ### Seal payload protocol
 
@@ -114,6 +116,7 @@ Implementation: [`src/lib/attestation.ts`](src/lib/attestation.ts). Seal protoco
 | Env (build-time) | Default |
 |------------------|---------|
 | `VITE_NIMIQ_RPC_URL` | `https://rpc.nimiqwatch.com` |
+| `VITE_ATTESTATION_SINK` | `NQ815N9JRGBJMLJQNBKEMQ1RD27TXS8PCVKA` |
 | `VITE_ONLINE_API_BASE` | `https://verilock.online` |
 | `VITE_ONLINE_LOOKUP_DEFAULT` | `false` |
 | `VITE_BASE_PATH` | `./` (GitHub Pages–friendly) |

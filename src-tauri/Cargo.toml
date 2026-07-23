@@ -1,6 +1,6 @@
 [package]
 name = "verilock-offline"
-version = "0.1.2"
+version = "0.1.3"
 description = "VeriLock Offline — local document fingerprint and seal verifier"
 authors = ["Clevertech OS"]
 license = "MIT"

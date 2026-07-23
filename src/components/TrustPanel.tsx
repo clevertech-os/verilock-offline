@@ -70,8 +70,10 @@ export function TrustPanel() {
 
       <h3>Network allowlist</h3>
       <p className="muted">
-        Fingerprint and certificate hash compare need no network. Chain verify uses public Nimiq
-        RPC. Directory lookup (opt-in) uses verilock.online. Explorer links open nimiq.watch in your
+        Local hashing and certificate hash compare need no network. After a drop, Check file scans
+        the VeriLock seal sink via public Nimiq RPC (<code>getTransactionsByAddress</code>) and
+        matches seal payloads client-side. Verify (tx) uses <code>getTransactionByHash</code>.
+        Directory lookup (opt-in) uses verilock.online. Explorer links open nimiq.watch in your
         browser.
       </p>
       <ul className="trust-list">
@@ -84,7 +86,7 @@ export function TrustPanel() {
 
       <h3>Nimiq RPC URL</h3>
       <label className="field-label" htmlFor="rpc-url">
-        JSON-RPC endpoint for getTransactionByHash
+        JSON-RPC endpoint for seal scan and getTransactionByHash
       </label>
       <input
         id="rpc-url"

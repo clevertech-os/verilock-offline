@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { bytesToHex, buildAttestationPayloadBytes } from './attestation'
 import {
+  findSealMatchesByHash,
   isTransactionNotFoundError,
   isValidTxHash,
   mapTx,
+  normalizeNimiqAddress,
   normalizeTxHash,
   verifyFileAgainstTx,
 } from './nimiqRpc'
@@ -140,5 +142,154 @@ describe('verifyFileAgainstTx', () => {
       fetchImpl,
     })
     expect(result.status).toBe('not-seal')
+  })
+})
+
+const SINK = 'NQ815N9JRGBJMLJQNBKEMQ1RD27TXS8PCVKA'
+const OTHER_SHA = 'ff'.repeat(32)
+
+function addressTxBody(txs: Array<Record<string, unknown>>) {
+  return { result: { data: txs } }
+}
+
+function makeSealTx(
+  hash: string,
+  docId: string,
+  sha: string,
+  extra: Partial<Record<string, unknown>> = {},
+) {
+  return {
+    hash,
+    from: 'NQ01 TEST',
+    to: SINK,
+    value: 1,
+    recipientData: bytesToHex(buildAttestationPayloadBytes(docId, sha)),
+    executionResult: true,
+    confirmations: 12,
+    blockNumber: 100,
+    ...extra,
+  }
+}
+
+describe('normalizeNimiqAddress', () => {
+  it('strips spaces and uppercases', () => {
+    expect(normalizeNimiqAddress('nq81 5n9j rgbj mljq nbke mq1r d27t xs8p cvka')).toBe(SINK)
+  })
+})
+
+describe('findSealMatchesByHash', () => {
+  it('finds seal payloads whose hash matches local fingerprint', async () => {
+    const matchHash = 'bb'.repeat(32)
+    const otherHash = 'cc'.repeat(32)
+    const fetchImpl = mockFetchSequence([
+      {
+        body: addressTxBody([
+          makeSealTx(matchHash, DOC, SHA),
+          makeSealTx(otherHash, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', OTHER_SHA),
+          {
+            hash: 'dd'.repeat(32),
+            from: 'NQ01',
+            to: SINK,
+            value: 1,
+            recipientData: '',
+            executionResult: true,
+            confirmations: 1,
+          },
+        ]),
+      },
+    ])
+
+    const result = await findSealMatchesByHash({
+      rpcUrl: 'https://rpc.example',
+      localSha256: SHA,
+      sinkAddress: SINK,
+      fetchImpl,
+    })
+    expect(result.status).toBe('ok')
+    if (result.status === 'ok') {
+      expect(result.matches).toHaveLength(1)
+      expect(result.matches[0]!.tx.hash).toBe(matchHash)
+      expect(result.matches[0]!.shortId).toBe('a1b2c3d4')
+      expect(result.scannedTxs).toBe(3)
+      expect(result.sealTxs).toBe(2)
+      expect(result.truncated).toBe(false)
+    }
+  })
+
+  it('returns empty matches when no seal embeds the hash', async () => {
+    const fetchImpl = mockFetchSequence([
+      {
+        body: addressTxBody([
+          makeSealTx('aa'.repeat(32), DOC, OTHER_SHA),
+        ]),
+      },
+    ])
+    const result = await findSealMatchesByHash({
+      rpcUrl: 'https://rpc.example',
+      localSha256: SHA,
+      sinkAddress: SINK,
+      fetchImpl,
+    })
+    expect(result.status).toBe('ok')
+    if (result.status === 'ok') {
+      expect(result.matches).toHaveLength(0)
+      expect(result.sealTxs).toBe(1)
+    }
+  })
+
+  it('pages until history ends', async () => {
+    const page1 = Array.from({ length: 2 }, (_, i) =>
+      makeSealTx(`${i.toString(16).padStart(2, '0')}`.repeat(32), DOC, OTHER_SHA),
+    )
+    const page2 = [makeSealTx(TX, DOC, SHA)]
+    const fetchImpl = mockFetchSequence([
+      { body: addressTxBody(page1) },
+      { body: addressTxBody(page2) },
+    ])
+    const result = await findSealMatchesByHash({
+      rpcUrl: 'https://rpc.example',
+      localSha256: SHA,
+      sinkAddress: SINK,
+      pageSize: 2,
+      maxTxs: 50,
+      fetchImpl,
+    })
+    expect(result.status).toBe('ok')
+    if (result.status === 'ok') {
+      expect(result.matches).toHaveLength(1)
+      expect(result.scannedTxs).toBe(3)
+      expect(result.truncated).toBe(false)
+    }
+  })
+
+  it('marks truncated when scan budget is exhausted on a full page', async () => {
+    const page = Array.from({ length: 2 }, (_, i) =>
+      makeSealTx(`${(i + 1).toString(16).padStart(2, '0')}`.repeat(32), DOC, OTHER_SHA),
+    )
+    const fetchImpl = mockFetchSequence([{ body: addressTxBody(page) }])
+    const result = await findSealMatchesByHash({
+      rpcUrl: 'https://rpc.example',
+      localSha256: SHA,
+      sinkAddress: SINK,
+      pageSize: 2,
+      maxTxs: 2,
+      fetchImpl,
+    })
+    expect(result.status).toBe('ok')
+    if (result.status === 'ok') {
+      expect(result.truncated).toBe(true)
+      expect(result.scannedTxs).toBe(2)
+    }
+  })
+
+  it('returns error on network failure', async () => {
+    const fetchImpl = mockFetchSequence([{ networkError: 'offline' }])
+    const result = await findSealMatchesByHash({
+      rpcUrl: 'https://rpc.example',
+      localSha256: SHA,
+      sinkAddress: SINK,
+      fetchImpl,
+    })
+    expect(result.status).toBe('error')
   })
 })
