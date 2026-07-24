@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "VeriLock Offline",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "identifier": "online.verilock.offline",
   "build": {
     "frontendDist": "../dist",
@@ -22,15 +22,15 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'"
+      "csp": "default-src 'self'; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; frame-src https://hub.nimiq.com https://*.nimiq.com; child-src https://hub.nimiq.com https://*.nimiq.com"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
     "category": "Utility",
-    "shortDescription": "Local VeriLock seal verifier — file never leaves your device",
-    "longDescription": "Open-source offline verifier for VeriLock document seals. Hash files locally and verify against Nimiq lock transactions without uploading the document.",
+    "shortDescription": "Local VeriLock lock verifier — file never leaves your device",
+    "longDescription": "Open-source offline verifier for VeriLock on-chain locks. Hash files locally and verify against Nimiq lock transactions without uploading the document.",
     "icon": [
       "icons/32x32.png",
       "icons/64x64.png",

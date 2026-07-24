@@ -1,5 +1,5 @@
-/** App version shown in UI and fingerprint receipts. */
-export const APP_VERSION = '0.1.3'
+/** App version shown in UI and fingerprint receipts. Keep in sync with package.json / tauri. */
+export const APP_VERSION = '0.1.6'
 
 export const APP_NAME = 'VeriLock Offline'
 
@@ -7,7 +7,7 @@ export const GITHUB_REPO_URL = 'https://github.com/clevertech-os/verilock-offlin
 
 export const ONLINE_PRODUCT_URL = 'https://verilock.online'
 
-/** Public Nimiq JSON-RPC used to fetch lock transactions. Overridable in Trust panel. */
+/** Public Nimiq JSON-RPC used to fetch lock transactions. Overridable in Settings. */
 export const DEFAULT_NIMIQ_RPC_URL =
   (import.meta.env.VITE_NIMIQ_RPC_URL as string | undefined)?.trim() ||
   'https://rpc.nimiqwatch.com'

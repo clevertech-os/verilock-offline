@@ -1,22 +1,16 @@
 import { useCallback, useId, useRef, useState } from 'react'
+import { FileText, Replace, Trash2, Upload } from 'lucide-react'
 
 interface FilePickerProps {
   file: File | null
   onFile: (file: File | null) => void
-  label?: string
-  accept?: string
   disabled?: boolean
-  hint?: string
 }
 
-export function FilePicker({
-  file,
-  onFile,
-  label = 'Choose a file on this device',
-  accept,
-  disabled,
-  hint = 'The file is read only in this app. It is never uploaded.',
-}: FilePickerProps) {
+const iconMd = { size: 28, strokeWidth: 1.75 } as const
+const iconSm = { size: 16, strokeWidth: 2.25 } as const
+
+export function FilePicker({ file, onFile, disabled }: FilePickerProps) {
   const id = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
@@ -30,11 +24,8 @@ export function FilePicker({
 
   return (
     <div className="file-picker">
-      <label className="file-picker-label" htmlFor={id}>
-        {label}
-      </label>
       <div
-        className={`file-drop${dragOver ? ' file-drop--active' : ''}${disabled ? ' file-drop--disabled' : ''}`}
+        className={`file-drop${dragOver ? ' file-drop--active' : ''}${disabled ? ' file-drop--disabled' : ''}${file ? ' file-drop--has-file' : ''}`}
         onDragEnter={e => {
           e.preventDefault()
           if (!disabled) setDragOver(true)
@@ -55,42 +46,64 @@ export function FilePicker({
           if (f) takeFile(f)
         }}
       >
-        <p className="file-drop-text">
-          {dragOver ? 'Drop to load' : 'Drag and drop a file here, or browse'}
-        </p>
-        <div className="file-picker-row">
-          <input
-            ref={inputRef}
-            id={id}
-            type="file"
-            accept={accept}
-            disabled={disabled}
-            onChange={e => {
-              const f = e.target.files?.[0] ?? null
-              takeFile(f)
-            }}
-          />
-          {file && (
-            <button
-              type="button"
-              className="btn btn-ghost"
+        {!file ? (
+          <div className="file-drop-idle">
+            <Upload className="file-drop-icon" {...iconMd} aria-hidden />
+            <p className="file-drop-text">
+              {dragOver ? 'Drop to check' : 'Drop a file here, or browse'}
+            </p>
+            <input
+              ref={inputRef}
+              id={id}
+              type="file"
               disabled={disabled}
-              onClick={() => {
-                takeFile(null)
-                if (inputRef.current) inputRef.current.value = ''
+              onChange={e => {
+                const f = e.target.files?.[0] ?? null
+                takeFile(f)
               }}
-            >
-              Clear
-            </button>
-          )}
-        </div>
+            />
+          </div>
+        ) : (
+          <div className="file-drop-selected">
+            <div className="file-drop-selected-row">
+              <FileText className="file-drop-icon" {...iconSm} aria-hidden />
+              <div className="file-drop-selected-meta">
+                <strong className="file-drop-name">{file.name}</strong>
+                <span className="muted">{(file.size / 1024).toFixed(1)} KB</span>
+              </div>
+            </div>
+            <div className="file-picker-row">
+              <label className="btn btn-ghost file-replace-label">
+                <Replace {...iconSm} aria-hidden />
+                Replace
+                <input
+                  ref={inputRef}
+                  id={id}
+                  type="file"
+                  className="visually-hidden"
+                  disabled={disabled}
+                  onChange={e => {
+                    const f = e.target.files?.[0] ?? null
+                    takeFile(f)
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={disabled}
+                onClick={() => {
+                  takeFile(null)
+                  if (inputRef.current) inputRef.current.value = ''
+                }}
+              >
+                <Trash2 {...iconSm} aria-hidden />
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-      {file && (
-        <p className="file-picker-meta muted">
-          {file.name} · {(file.size / 1024).toFixed(1)} KB · {file.type || 'unknown type'}
-        </p>
-      )}
-      <p className="file-picker-hint muted">{hint}</p>
     </div>
   )
 }

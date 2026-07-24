@@ -1,0 +1,24 @@
+[[permission]]
+identifier = "allow-fetch-json"
+description = "Allow hash-only / JSON product API requests via native HTTP (never file bytes)"
+commands.allow = ["fetch_json"]
+
+[[permission]]
+identifier = "allow-fetch-image-data-url"
+description = "Allow fetching signature ink images as data URLs (never PDFs)"
+commands.allow = ["fetch_image_data_url"]
+
+[[permission]]
+identifier = "allow-login-via-system-browser"
+description = "Open Nimiq Hub login in the system browser on a free loopback port"
+commands.allow = ["login_via_system_browser"]
+
+[[permission]]
+identifier = "allow-open-external-url"
+description = "Open allowlisted https links (product, GitHub, explorers) in the system browser"
+commands.allow = ["open_external_url"]
+
+[[permission]]
+identifier = "allow-open-print-html"
+description = "Write a temporary print-preview HTML (rendered page images) and open it in the system browser"
+commands.allow = ["open_print_html"]

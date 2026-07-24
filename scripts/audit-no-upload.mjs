@@ -13,12 +13,15 @@ const SRC = join(ROOT, 'src')
 const FETCH_ALLOW = new Set([
   'src/lib/nimiqRpc.ts',
   'src/lib/onlineLookup.ts',
+  'src/lib/tauriHttp.ts',
+  'src/lib/onlineDocument.ts',
+  'src/lib/walletAuth.ts',
   'src/lib/nimiqRpc.test.ts',
   'src/lib/onlineLookup.test.ts',
 ])
 
 // Docs-only files may mention forbidden APIs as audit instructions.
-const DOCS_MENTION_OK = new Set(['src/components/TrustPanel.tsx'])
+const DOCS_MENTION_OK = new Set(['src/components/SettingsPanel.tsx'])
 
 const FORBIDDEN = [
   { re: /\bnew\s+FormData\b/, msg: 'new FormData() (upload pattern)' },
@@ -67,6 +70,19 @@ if (!/JSON\.stringify\(\{\s*sha256/.test(online)) {
 }
 if (/arrayBuffer|FormData/.test(online)) {
   console.error('FAIL onlineLookup.ts: must not reference file bytes')
+  failed = true
+}
+
+const onlineDoc = readFileSync(join(SRC, 'lib/onlineDocument.ts'), 'utf8')
+if (/FormData|new\s+File\b|file\.arrayBuffer|file\.stream/.test(onlineDoc)) {
+  console.error('FAIL onlineDocument.ts: must not upload or stream file bytes')
+  failed = true
+}
+
+// PDF render may read local ArrayBuffer for pdf.js only — must not fetch it.
+const pdfRender = readFileSync(join(SRC, 'lib/pdf/pdfRender.ts'), 'utf8')
+if (/\bfetch\s*\(/.test(pdfRender)) {
+  console.error('FAIL pdfRender.ts: must not use fetch (local render only)')
   failed = true
 }
 

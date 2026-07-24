@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { CertificatePanel } from './components/CertificatePanel'
-import { FingerprintPanel } from './components/FingerprintPanel'
-import { OnlineLookupPanel } from './components/OnlineLookupPanel'
-import { TrustPanel } from './components/TrustPanel'
-import { VerifyTxPanel } from './components/VerifyTxPanel'
+import { Code2, FileSearch, Globe, Monitor, Settings } from 'lucide-react'
+import { CheckPanel } from './components/CheckPanel'
+import { SettingsPanel } from './components/SettingsPanel'
+import { WalletHeader } from './components/WalletHeader'
 import {
   APP_NAME,
   APP_VERSION,
@@ -12,108 +11,101 @@ import {
   surfaceLabel,
 } from './lib/config'
 import { DocumentSessionProvider } from './lib/DocumentSessionContext'
+import { WalletProvider } from './lib/WalletContext'
 import './App.css'
 
-type TabId = 'fingerprint' | 'tx' | 'certificate' | 'directory' | 'trust'
+type TabId = 'check' | 'settings'
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'fingerprint', label: 'Check file' },
-  { id: 'tx', label: 'Verify (tx)' },
-  { id: 'certificate', label: 'Certificate' },
-  { id: 'directory', label: 'Directory' },
-  { id: 'trust', label: 'Trust' },
-]
+const iconSm = { size: 16, strokeWidth: 2.25 } as const
 
-export default function App() {
-  const [tab, setTab] = useState<TabId>('fingerprint')
+function AppShell() {
+  const [tab, setTab] = useState<TabId>('check')
   const surface = surfaceLabel()
 
   return (
-    <DocumentSessionProvider>
-      <div className="app">
-        <header className="app-header">
-          <div className="brand">
-            <img
-              className="brand-mark"
-              src={`${import.meta.env.BASE_URL}verilock-mark.png`}
-              alt=""
-              width={48}
-              height={48}
-            />
-            <div>
-              <p className="brand-name">{APP_NAME}</p>
-              <p className="brand-tag">Local hash · chain proof · open source</p>
-            </div>
+    <div className="app">
+      <header className="app-header">
+        <div className="brand">
+          <img
+            className="brand-mark"
+            src={`${import.meta.env.BASE_URL}verilock-mark.png`}
+            alt=""
+            width={48}
+            height={48}
+          />
+          <div>
+            <p className="brand-name">{APP_NAME}</p>
+            <p className="brand-tag">Sign today. Prove tomorrow.</p>
           </div>
-          <div className="header-meta">
-            <span className="badge" title={`v${APP_VERSION}`}>
-              {surface === 'desktop' ? 'Desktop' : 'Web'} · v{APP_VERSION}
-            </span>
-            <a
-              className="header-link"
-              href={GITHUB_REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+        </div>
+        <div className="header-meta">
+          <nav className="header-nav" aria-label="Main">
+            <button
+              type="button"
+              className={`header-nav-btn${tab === 'check' ? ' header-nav-btn--active' : ''}`}
+              aria-current={tab === 'check' ? 'page' : undefined}
+              onClick={() => setTab('check')}
             >
-              Source
-            </a>
-            <a
-              className="header-link"
-              href={ONLINE_PRODUCT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              <FileSearch {...iconSm} aria-hidden />
+              Check
+            </button>
+            <button
+              type="button"
+              className={`header-nav-btn${tab === 'settings' ? ' header-nav-btn--active' : ''}`}
+              aria-current={tab === 'settings' ? 'page' : undefined}
+              onClick={() => setTab('settings')}
             >
-              verilock.online
-            </a>
-          </div>
-        </header>
-
-        <main className="app-main">
-          <section className="hero">
-            <h1>Check a sealed document without uploading it</h1>
-            <p>
-              Drop a file to hash it on this device, then scan public Nimiq seal transactions for
-              matches — or prove against a known lock tx / certificate. Review the code to confirm
-              the file never leaves this app.
-            </p>
-          </section>
-
-          <nav className="tabs" aria-label="Verification modes">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                type="button"
-                className={`tab ${tab === t.id ? 'tab--active' : ''}`}
-                aria-current={tab === t.id ? 'page' : undefined}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
+              <Settings {...iconSm} aria-hidden />
+              Settings
+            </button>
           </nav>
+          <WalletHeader />
+        </div>
+      </header>
 
-          <div className="tab-panel">
-            {tab === 'fingerprint' && <FingerprintPanel />}
-            {tab === 'tx' && <VerifyTxPanel />}
-            {tab === 'certificate' && <CertificatePanel />}
-            {tab === 'directory' && <OnlineLookupPanel />}
-            {tab === 'trust' && <TrustPanel />}
-          </div>
-        </main>
+      <main className="app-main">
+        {tab === 'check' && (
+          <section className="hero">
+            <h1>Is this document locked on chain?</h1>
+            <p>Drop the file. Nothing is uploaded.</p>
+          </section>
+        )}
 
-        <footer className="app-footer">
-          <p>
-            Companion to{' '}
-            <a href={ONLINE_PRODUCT_URL} target="_blank" rel="noopener noreferrer">
-              verilock.online
-            </a>
-            . MIT licensed ·{' '}
-            <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
-              GitHub
-            </a>
-          </p>
-        </footer>
-      </div>
+        <div className="tab-panel">{tab === 'check' ? <CheckPanel /> : <SettingsPanel />}</div>
+      </main>
+
+      <footer className="app-footer">
+        <p className="app-footer-links">
+          Companion to{' '}
+          <a href={ONLINE_PRODUCT_URL} target="_blank" rel="noopener noreferrer">
+            <Globe size={14} strokeWidth={2.25} aria-hidden />
+            verilock.online
+          </a>
+          {' · '}
+          <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+            <Code2 size={14} strokeWidth={2.25} aria-hidden />
+            Source
+          </a>
+        </p>
+        <span className="badge app-footer-badge" title={`v${APP_VERSION}`}>
+          {surface === 'desktop' ? (
+            <Monitor size={13} strokeWidth={2.25} aria-hidden />
+          ) : (
+            <Globe size={13} strokeWidth={2.25} aria-hidden />
+          )}
+          {surface === 'desktop' ? 'Desktop' : 'Web'} · v{APP_VERSION}
+        </span>
+      </footer>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <DocumentSessionProvider>
+      <WalletProvider>
+        <AppShell />
+      </WalletProvider>
     </DocumentSessionProvider>
   )
 }

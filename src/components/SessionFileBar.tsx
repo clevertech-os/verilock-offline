@@ -1,9 +1,9 @@
-import { formatBytes, shortHash } from '../lib/hash'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { useDocumentSession } from '../lib/DocumentSessionContext'
 import { FilePicker } from './FilePicker'
 
-/** Shared file control used by all verify modes. */
-export function SessionFileBar({ label = 'Document file on this device' }: { label?: string }) {
+/** Shared file control used by the check flow. */
+export function SessionFileBar() {
   const { session, busy, error, setFile } = useDocumentSession()
 
   return (
@@ -13,23 +13,18 @@ export function SessionFileBar({ label = 'Document file on this device' }: { lab
         onFile={f => {
           void setFile(f)
         }}
-        label={label}
         disabled={busy}
       />
       {busy && (
         <p className="status status-pending" role="status">
-          Hashing locally…
+          <Loader2 className="lucide-spin" size={16} strokeWidth={2.25} aria-hidden />
+          Checking on this device…
         </p>
       )}
       {error && (
         <p className="status status-error" role="alert">
+          <AlertCircle size={16} strokeWidth={2.25} aria-hidden />
           {error}
-        </p>
-      )}
-      {session && !busy && (
-        <p className="session-hash muted" role="status">
-          Local fingerprint <code title={session.sha256}>{shortHash(session.sha256)}</code> ·{' '}
-          {formatBytes(session.size)}
         </p>
       )}
     </div>
